@@ -1,0 +1,12 @@
+*.idea
+.DS_Store
+# These are Windows script files and should use crlf
+*.bat           text eol=crlf
+
+# Binary files should be left untouched
+*.jar           binary
+# Ignore Gradle project-specific cache directory
+.gradle
+
+# Ignore Gradle build output directory
+build
