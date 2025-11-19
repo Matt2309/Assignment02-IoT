@@ -5,47 +5,90 @@ package org.dru;
 
 import com.fazecast.jSerialComm.SerialPort;
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.scene.Scene;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.TextArea;
 
 public class App extends Application {
 
+    private SerialPort serialPort;
+
+    @Override
     public void start(Stage stage) {
-        Label label = new Label("Benvenuto in JavaFX!");
-        Button button = new Button("Cliccami");
 
-        button.setOnAction(e -> label.setText("Bottone premuto!"));
+        TextArea console = new TextArea();
+        console.setEditable(false);
 
-        VBox layout = new VBox(20);
-        layout.getChildren().addAll(label, button);
+        Button connectBtn = new Button("Connetti a COM4");
+        Button ledOnBtn = new Button("LED ON");
+        Button ledOffBtn = new Button("LED OFF");
 
-        Scene scene = new Scene(layout, 300, 200);
+        // Connessione fissa a COM4
+        connectBtn.setOnAction(e -> {
+            String portName = "COM4";  // <--- PORTA FISSA
+            serialPort = SerialPort.getCommPort(portName);
+            serialPort.setBaudRate(9600);
 
-        stage.setTitle("Esempio JavaFX");
-        stage.setScene(scene);
+            if (serialPort.openPort()) {
+                console.appendText("Connesso a " + portName + "\n");
+                startSerialReader(console);
+            } else {
+                console.appendText("Errore: impossibile aprire " + portName + "\n");
+            }
+        });
+
+        // Comandi Arduino
+        ledOnBtn.setOnAction(e -> write("LED_ON"));
+        ledOffBtn.setOnAction(e -> write("LED_OFF"));
+
+        VBox root = new VBox(10,
+                connectBtn, 
+                ledOnBtn, 
+                ledOffBtn,
+                new Label("Console:"),
+                console
+        );
+
+        stage.setScene(new Scene(root, 400, 400));
+        stage.setTitle("JavaFX ↔ Arduino (COM4)");
         stage.show();
+    }
+
+    private void startSerialReader(TextArea console) {
+        Thread thread = new Thread(() -> {
+            try {
+                while (serialPort.isOpen()) {
+                    if (serialPort.bytesAvailable() > 0) {
+                        byte[] buffer = new byte[serialPort.bytesAvailable()];
+                        serialPort.readBytes(buffer, buffer.length);
+
+                        String msg = new String(buffer);
+
+                        Platform.runLater(() -> console.appendText(msg));
+                    }
+                    Thread.sleep(20);
+                }
+            } catch (Exception ex) {
+                Platform.runLater(() -> console.appendText("Errore lettura.\n"));
+            }
+        });
+
+        thread.setDaemon(true);
+        thread.start();
+    }
+
+    private void write(String data) {
+        if (serialPort != null && serialPort.isOpen()) {
+            data = data + "\n";
+            serialPort.writeBytes(data.getBytes(), data.length());
+        }
     }
 
     public static void main(String[] args) {
         launch(args);
-        SerialPort port = SerialPort.getCommPorts()[0]; // seleziona la porta
-        port.setBaudRate(9600);
-
-        if(port.openPort()) {
-            System.out.println("Porta aperta!");
-
-            new Thread(() -> {
-                while (true) {
-                    if(port.bytesAvailable() > 0) {
-                        byte[] buffer = new byte[port.bytesAvailable()];
-                        port.readBytes(buffer, buffer.length);
-                        System.out.print(new String(buffer));
-                    }
-                }
-            }).start();
-        }
     }
 }
