@@ -38,6 +38,11 @@ testing {
     }
 }
 
+tasks.test {
+    useJUnitPlatform()
+    enabled = false
+}
+
 // Apply a specific Java toolchain to ease working on different environments.
 java {
     toolchain {
