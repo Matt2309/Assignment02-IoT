@@ -9,6 +9,12 @@
 plugins {
     // Apply the application plugin to add support for building a CLI application in Java.
     id 'application'
+    id 'org.openjfx.javafxplugin' version '0.1.0'
+}
+
+javafx {
+    version = "17.0.8"
+    modules = [ 'javafx.controls' ]
 }
 
 repositories {
@@ -19,6 +25,7 @@ repositories {
 dependencies {
     // This dependency is used by the application.
     implementation libs.guava
+    implementation "com.fazecast:jSerialComm:[2.0.0,3.0.0)"
 }
 
 testing {
