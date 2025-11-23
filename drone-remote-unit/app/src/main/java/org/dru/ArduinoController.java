@@ -1,11 +1,19 @@
 package org.dru;
 
 import com.fazecast.jSerialComm.SerialPort;
+import java.util.function.Consumer;
 
-public class ArduinoController {
+public class ArduinoController extends Thread {
+    private final Consumer<String> callback;
     private SerialPort serialPort;
+    private final String portName;
 
-    public void connect(String portName) {
+    public ArduinoController(Consumer<String> callback, String portName) {
+        this.callback = callback;
+        this.portName = portName;
+    }
+
+    public void connect() {
         serialPort = SerialPort.getCommPort(portName);
         serialPort.setBaudRate(9600);
 
@@ -22,7 +30,9 @@ public class ArduinoController {
                     if (serialPort.bytesAvailable() > 0) {
                         byte[] buffer = new byte[serialPort.bytesAvailable()];
                         serialPort.readBytes(buffer, buffer.length);
-                        System.out.println("Arduino dice: " + new String(buffer));
+                        String data = new String(buffer);
+                        System.out.println("Input from Arduino: " + data);
+                        callback.accept(new String(buffer));
                     }
                     Thread.sleep(20);
                 }
@@ -32,7 +42,14 @@ public class ArduinoController {
         }).start();
     }
 
-    public void write(String msg) {
+    public void takeOff() {
+        this.write("TAKE_OFF");
+    }
+    public void land() {
+        this.write("LAND");
+    }
+
+    private void write(String msg) {
         if (serialPort != null && serialPort.isOpen()) {
             msg = msg + "\n";
             serialPort.writeBytes(msg.getBytes(), msg.length());
