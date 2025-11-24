@@ -9,7 +9,7 @@
 #include <LiquidCrystal_I2C.h>
 
 // --- CONFIGURAZIONE PIN ---
-const int greenLedPins[] = {10, 11};
+const int greenLedPins[] = { 10, 11 };
 const int redLedPin = 12;
 const int btn = 4;
 const int trigPin = 6;
@@ -26,10 +26,10 @@ const int NUM_greenLed = 2;
 #define T2_TIME_LAND 3000
 
 // PARAMETRI TEMPERATURA
-#define TEMP1_PRE_ALARM 25    
-#define T3_TIME_PRE_ALARM 4000 
-#define TEMP2_ALARM 30        
-#define T4_TIME_ALARM 3000  
+#define TEMP1_PRE_ALARM 25
+#define T3_TIME_PRE_ALARM 4000
+#define TEMP2_ALARM 30
+#define T4_TIME_ALARM 3000
 
 // --- DEBUG ---
 // Lascialo FALSE per usare il PIR. Se hai problemi HW, metti TRUE.
@@ -71,10 +71,10 @@ unsigned long debugPrintTimer = 0;
 unsigned long stateEnterTime = 0;
 
 // Timer temperatura
-unsigned long tempPreAlarmTimer = 0; // timer per i 4 secondi
-unsigned long tempAlarmTimer = 0;    // timer per i 3 secondi
+unsigned long tempPreAlarmTimer = 0;  // timer per i 4 secondi
+unsigned long tempAlarmTimer = 0;     // timer per i 3 secondi
 
-bool isPreAlarm = false; // se settata a true blocca nuove operazioni
+bool isPreAlarm = false;  // se settata a true blocca nuove operazioni
 
 
 // --- PROTOTIPI ---
@@ -121,62 +121,20 @@ void loop() {
 // ==========================================
 
 void taskFSM() {
-
-  // --- CAMBIO STATO ---
-  if (statoCorrente != statoPrecedente) {
-    lcd.clear();
-    stateEnterTime = millis();
-    persistenceTimer = millis();
-
-    Serial.print("STATE CHANGED TO: ");
-    Serial.println(statoCorrente);
-
-    switch (statoCorrente) {
-      case DRONE_INSIDE:
-        lcd.print("DRONE INSIDE");
-        if(isPreAlarm) lcd.print(" (PRE)");
-        digitalWrite(greenLedPins[0], HIGH);
-        closeDoor();
-        break;
-
-      case TAKE_OFF:
-        lcd.print("TAKE OFF");
-        digitalWrite(greenLedPins[0], LOW);
-        openDoor();
-        Serial.println("MSG: Attendo uscita (>20cm)...");
-        break;
-
-      case DRONE_OUT:
-        lcd.print("DRONE OUT");
-        if(isPreAlarm) lcd.print(" (PRE)");
-        closeDoor();
-        Serial.println("MSG: Drone fuori. Invia LAND.");
-        break;
-
-      case LANDING:
-        lcd.print("LANDING");
-        openDoor();
-        break;
-
-      case ALARM:
-        lcd.print("ALARM");
-        digitalWrite(greenLedPins[0], LOW);
-        digitalWrite(greenLedPins[1], LOW);
-        digitalWrite(redLedPin, HIGH);
-        closeDoor();
-        Serial.println("MSG: SISTEMA BLOCCATO PER TEMPERATURA! Premi bottone RESET.");
-        break;
-    }
-    statoPrecedente = statoCorrente;
-  }
-
   // --- LOGICA CICLICA ---
   switch (statoCorrente) {
 
     case DRONE_INSIDE:
+      digitalWrite(greenLedPins[0], HIGH);
       if (cmdTakeOffReceived) {
         if (!isPreAlarm) {
           statoCorrente = TAKE_OFF;
+          statoPrecedente = statoCorrente;
+          lcd.clear();
+          lcd.print("TAKE OFF");
+          digitalWrite(greenLedPins[0], LOW);
+          openDoor();
+          Serial.println("MSG: Attendo uscita (>20cm)...");
         } else {
           Serial.println("MSG: IMPOSSIBILE DECOLLARE - TEMPERATURA ALTA (PRE-ALARM)");
         }
@@ -190,34 +148,44 @@ void taskFSM() {
       } else {
         if (millis() - persistenceTimer >= T1_TIME_EXIT) {
           statoCorrente = DRONE_OUT;
+          statoPrecedente = statoCorrente;
+          lcd.clear();
+          lcd.print("DRONE OUT");
+          if (isPreAlarm) lcd.print(" (PRE)");
+          closeDoor();
+          Serial.println("MSG: Drone fuori. Invia LAND.");
         }
       }
       break;
 
     case DRONE_OUT:
       if (cmdLandReceived) {
-        
+
         // Blocco sicurezza pre-allarme
         if (isPreAlarm) {
-           Serial.println("MSG: IMPOSSIBILE ATTERRARE - TEMPERATURA ALTA (PRE-ALARM)");
-           cmdLandReceived = false;
+          Serial.println("MSG: IMPOSSIBILE ATTERRARE - TEMPERATURA ALTA (PRE-ALARM)");
+          cmdLandReceived = false;
         } else {
-            // Logica PIR
-            int pirVal = digitalRead(pirSensor);
-            
-            // Stampo stato PIR ogni tanto
-            static unsigned long lastPirPrint = 0;
-            if (millis() - lastPirPrint > 500) {
-              lastPirPrint = millis();
-              Serial.print(">>> STO ASPETTANDO IL PIR... Valore: ");
-              Serial.println(pirVal);
-            }
-    
-            if (pirVal == HIGH || SKIP_PIR_CHECK) {
-              Serial.println(">>> PIR RILEVATO! Atterraggio in corso...");
-              statoCorrente = LANDING;
-              cmdLandReceived = false;
-            }
+          // Logica PIR
+          int pirVal = digitalRead(pirSensor);
+
+          // Stampo stato PIR ogni tanto
+          static unsigned long lastPirPrint = 0;
+          if (millis() - lastPirPrint > 500) {
+            lastPirPrint = millis();
+            Serial.print(">>> STO ASPETTANDO IL PIR... Valore: ");
+            Serial.println(pirVal);
+          }
+
+          if (pirVal == HIGH || SKIP_PIR_CHECK) {
+            Serial.println(">>> PIR RILEVATO! Atterraggio in corso...");
+            statoCorrente = LANDING;
+            statoPrecedente = statoCorrente;
+            lcd.clear();
+            lcd.print("LANDING");
+            openDoor();
+            cmdLandReceived = false;
+          }
         }
       }
       break;
@@ -228,6 +196,12 @@ void taskFSM() {
       } else {
         if (millis() - persistenceTimer >= T2_TIME_LAND) {
           statoCorrente = DRONE_INSIDE;
+          statoPrecedente = statoCorrente;
+          lcd.clear();
+          lcd.print("DRONE INSIDE");
+          closeDoor();
+          if (isPreAlarm) lcd.print(" (PRE)");
+          digitalWrite(greenLedPins[0], HIGH);
         }
       }
       break;
@@ -235,12 +209,16 @@ void taskFSM() {
     case ALARM:
       if (digitalRead(btn) == HIGH || cmdResetReceived) {
         if (getTemperature() < TEMP1_PRE_ALARM) {
-           statoCorrente = DRONE_INSIDE;
-           Serial.println("MSG: Reset eseguito e temperatura OK.");
+          statoCorrente = DRONE_INSIDE;
+          statoPrecedente = statoCorrente;
+          lcd.print("DRONE INSIDE");
+          digitalWrite(greenLedPins[0], HIGH);
+          closeDoor();
+          Serial.println("MSG: Reset eseguito e temperatura OK.");
         } else {
-           Serial.println("MSG: Reset fallito - Temperatura ancora troppo alta!");
+          Serial.println("MSG: Reset fallito - Temperatura ancora troppo alta!");
         }
-        cmdResetReceived = false; 
+        cmdResetReceived = false;
       }
       break;
   }
@@ -257,33 +235,40 @@ void taskTemperature() {
       tempAlarmTimer = millis();
     } else if (millis() - tempAlarmTimer >= T4_TIME_ALARM) {
       statoCorrente = ALARM;
-      Serial.println("!!! ALLARME CRITICO TEMPERATURA !!!");
+      lcd.clear();
+      lcd.print("ALARM");
+      digitalWrite(greenLedPins[0], LOW);
+      digitalWrite(greenLedPins[1], LOW);
+      digitalWrite(redLedPin, HIGH);
+      closeDoor();
+      Serial.println("MSG: SISTEMA BLOCCATO PER TEMPERATURA! Premi bottone RESET.");
       // Manda messaggio se il drone è fuori
       if (statoCorrente == DRONE_OUT) {
-         Serial.println("MSG: ALARM");
+        Serial.println("MSG: ALARM");
       }
       tempAlarmTimer = 0;
     }
   } else {
-    tempAlarmTimer = 0; 
+    tempAlarmTimer = 0;
   }
 
   // --- 2. LOGICA PRE-ALLARME (>= 25°C per 4 sec) ---
   if (temp >= TEMP1_PRE_ALARM) {
     if (tempPreAlarmTimer == 0) {
       tempPreAlarmTimer = millis();
-    } else if (millis() - tempPreAlarmTimer >= T3_TIME_PRE_ALARM) { // CORRETTO QUI
+    } else if (millis() - tempPreAlarmTimer >= T3_TIME_PRE_ALARM) {  // CORRETTO QUI
       if (!isPreAlarm) {
         isPreAlarm = true;
         Serial.println("ATTENZIONE: Pre-Allarme Attivo (Temp Alta)");
         if (statoCorrente == DRONE_INSIDE || statoCorrente == DRONE_OUT) {
-          lcd.setCursor(11, 0); lcd.print("(PRE)");
+          lcd.setCursor(11, 0);
+          lcd.print("(PRE)");
         }
       }
     }
   } else {
-    tempPreAlarmTimer = 0; // CORRETTO NOME VARIABILE
-    if(isPreAlarm){
+    tempPreAlarmTimer = 0;  // CORRETTO NOME VARIABILE
+    if (isPreAlarm) {
       isPreAlarm = false;
       Serial.println("INFO: Temperatura normalizzata. Pre-Allarme rimosso.");
     }
@@ -310,17 +295,17 @@ void taskSerial() {
     msg.toUpperCase();
 
     if (msg.length() > 0) {
-      Serial.print("RX: ["); Serial.print(msg); Serial.println("]");
+      Serial.print("RX: [");
+      Serial.print(msg);
+      Serial.println("]");
 
       if (msg.indexOf("TAKEOFF") >= 0) {
         cmdTakeOffReceived = true;
         Serial.println("CMD: TAKEOFF SET to TRUE");
-      }
-      else if (msg.indexOf("LAND") >= 0) {
+      } else if (msg.indexOf("LAND") >= 0) {
         cmdLandReceived = true;
         Serial.println("CMD: LAND SET to TRUE");
-      }
-      else if (msg.indexOf("RESET") >= 0) {
+      } else if (msg.indexOf("RESET") >= 0) {
         cmdResetReceived = true;
         Serial.println("CMD: RESET SET to TRUE");
       }
@@ -330,12 +315,12 @@ void taskSerial() {
   // Telemetria
   if (millis() - debugPrintTimer > 1000) {
     debugPrintTimer = millis();
-    // Debug Temperatura se alta
-    if (getTemperature() > 20) {
-       Serial.print("Temp: "); Serial.println(getTemperature());
-    }
+    // Debug Temperatura
+    Serial.print("Temp: ");
+    Serial.println(getTemperature());
     if (statoCorrente == TAKE_OFF || statoCorrente == LANDING) {
-      Serial.print("Dist: "); Serial.println(getDistance());
+      Serial.print("Dist: ");
+      Serial.println(getDistance());
     }
   }
 }
@@ -363,8 +348,8 @@ void initHardware() {
   closeDoor();
 
   lcd.clear();
-  lcd.print("System Ready");
-  Serial.println("System Ready");
+  lcd.print("DRONE INSIDE");
+  Serial.println("DRONE INSIDE");
 }
 
 float getDistance() {
@@ -390,9 +375,25 @@ bool checkPir() {
 }
 
 void openDoor() {
+  Serial.println("Servo: OPENING...");
+  myservo.attach(servoPin);
+
+  myservo.write(180);
+
+  delay(1000);
+
   myservo.write(90);
+  myservo.detach();
 }
 
 void closeDoor() {
+  Serial.println("Servo: CLOSING...");
+  myservo.attach(servoPin);
+
   myservo.write(0);
+
+  delay(1000);
+
+  myservo.write(90);
+  myservo.detach();
 }
