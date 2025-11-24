@@ -1,0 +1,17 @@
+.root {
+    -fx-background-image: url("img/hangar.jpg");
+    -fx-background-size: cover;
+    -fx-background-repeat: no-repeat;
+    -fx-background-position: center;
+}
+
+.label {
+    -fx-text-fill: white;
+    -fx-font-size: 16px;
+}
+
+.button {
+    -fx-font-size: 14px;
+    -fx-background-color: darkgrey;
+    -fx-background-radius: 30px;
+}

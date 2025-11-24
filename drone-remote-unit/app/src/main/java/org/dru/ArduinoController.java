@@ -61,4 +61,8 @@ public class ArduinoController extends Thread {
             serialPort.closePort();
         }
     }
+
+    public void Reset() {
+        this.write("RESET");
+    }
 }
