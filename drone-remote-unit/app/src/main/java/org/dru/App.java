@@ -1,6 +1,5 @@
 package org.dru;
 
-import com.fazecast.jSerialComm.SerialPort;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
@@ -19,7 +18,7 @@ public class App extends Application {
     private final Label outArduino = new Label("");
 
     private final TextArea console = new TextArea();
-    private final ArduinoController[] controller = new ArduinoController[1];
+    ArduinoController controller = new ArduinoController(this::onSerialDataReceived);
 
     // ----------------- Callback da Arduino ------------------
     private String statoDroneLogico = "riposo";
@@ -109,8 +108,8 @@ public class App extends Application {
 
         // *** Sezione Superiore - Porta + Connessione ***
         ComboBox<String> portSelector = new ComboBox<>();
-        for (SerialPort p : SerialPort.getCommPorts())
-            portSelector.getItems().add(p.getSystemPortName());
+        for (String p : controller.getAvailablePorts())
+            portSelector.getItems().add(p);
         if (!portSelector.getItems().isEmpty())
             portSelector.getSelectionModel().selectFirst();
 
@@ -179,28 +178,27 @@ public class App extends Application {
                 return;
             }
 
-            controller[0] = new ArduinoController(this::onSerialDataReceived, port);
-            controller[0].connect();
+            controller.connect(port);
             appendLog("Connesso a " + port);
         });
 
         disconnectBtn.setOnAction(e -> {
-            if (controller[0] != null) controller[0].disconnect();
+            if (controller != null) controller.disconnect();
             appendLog("Disconnesso");
         });
 
         takeOffBtn.setOnAction(e -> {
-            if (controller[0] != null) controller[0].takeOff();
+            if (controller != null) controller.takeOff();
             appendLog("→ TAKE_OFF");
         });
 
         landBtn.setOnAction(e -> {
-            if (controller[0] != null) controller[0].land();
+            if (controller != null) controller.land();
             appendLog("→ LAND");
         });
 
         resetBtn.setOnAction(e -> {
-            if (controller[0] != null) controller[0].Reset();
+            if (controller != null) controller.Reset();
             appendLog("→ RESET");
         });
 

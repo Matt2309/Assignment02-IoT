@@ -1,27 +1,42 @@
 package org.dru;
 
 import com.fazecast.jSerialComm.SerialPort;
+
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Consumer;
 
 public class ArduinoController extends Thread {
     private final Consumer<String> callback;
     private SerialPort serialPort;
-    private final String portName;
 
-    public ArduinoController(Consumer<String> callback, String portName) {
+    public ArduinoController(Consumer<String> callback) {
         this.callback = callback;
-        this.portName = portName;
     }
 
-    public void connect() {
-        serialPort = SerialPort.getCommPort(portName);
-        serialPort.setBaudRate(9600);
+    public List<String> getAvailablePorts() {
+        List<String> result = new ArrayList<>();
 
+        for (SerialPort port : SerialPort.getCommPorts()) {
+            String systemName = port.getSystemPortName();
+            String description = port.getDescriptivePortName();
+
+            result.add(systemName + " (" + description + ")");
+        }
+
+        return result;
+    }
+
+    public void connect(String portName) {
+        String systemPortName = "/dev/"+portName.split(" ")[0];
+        System.out.println("Connecting to port " + systemPortName);
+        this.serialPort = SerialPort.getCommPort(systemPortName);
+        serialPort.setComPortParameters (9600 , Byte.SIZE , SerialPort.ONE_STOP_BIT, SerialPort.NO_PARITY ) ;
+        serialPort.setComPortTimeouts (SerialPort.TIMEOUT_WRITE_BLOCKING,0 ,0);
         if (serialPort.openPort()) {
-            System.out.println("Connesso a " + portName);
+            System.out.println("Porta aperta: " + systemPortName);
         } else {
-            System.out.println("Errore: impossibile aprire la porta");
-            return;
+            System.out.println("Errore apertura porta");
         }
 
         new Thread(() -> {
@@ -43,7 +58,7 @@ public class ArduinoController extends Thread {
     }
 
     public void takeOff() {
-        this.write("TAKE_OFF");
+        this.write("TAKEOFF");
     }
     public void land() {
         this.write("LAND");
