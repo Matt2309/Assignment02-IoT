@@ -4,10 +4,10 @@
     -fx-text-fill: white;
     -fx-background-radius: 8;
 }
-
 .button:hover {
     -fx-background-color: #2a8af0;
 }
+
 
 .label {
     -fx-text-fill: white;

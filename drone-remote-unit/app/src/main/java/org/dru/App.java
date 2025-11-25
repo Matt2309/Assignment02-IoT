@@ -142,10 +142,7 @@ public class App extends Application {
                 outArduino
         );
         statusBox.setPadding(new Insets(10));
-        statusBox.setStyle("-fx-font-size: 16px;");
-        lblStatoDrone.setStyle("-fx-text-fill: white");
-        lblStatoHangar.setStyle("-fx-text-fill: white");
-        lblDistanza.setStyle("-fx-text-fill: white");
+        statusBox.setStyle("-fx-font-size: 16px; -fx-text-fill: white");
         statusBox.setAlignment(Pos.CENTER_LEFT);
 
 
@@ -209,6 +206,7 @@ public class App extends Application {
 
 
         Scene scene = new Scene(root, 900, 600);
+        scene.getStylesheets().add(getClass().getResource("/style.css").toExternalForm());
         stage.setTitle("DRU System - Interfaccia Hangar Drone");
         stage.setScene(scene);
         stage.show();
