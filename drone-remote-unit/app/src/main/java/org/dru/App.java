@@ -142,7 +142,10 @@ public class App extends Application {
                 outArduino
         );
         statusBox.setPadding(new Insets(10));
-        statusBox.setStyle("-fx-font-size: 16px; -fx-text-fill: white;");
+        statusBox.setStyle("-fx-font-size: 16px;");
+        lblStatoDrone.setStyle("-fx-text-fill: white");
+        lblStatoHangar.setStyle("-fx-text-fill: white");
+        lblDistanza.setStyle("-fx-text-fill: white");
         statusBox.setAlignment(Pos.CENTER_LEFT);
 
 
