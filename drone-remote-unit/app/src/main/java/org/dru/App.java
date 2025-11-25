@@ -22,31 +22,83 @@ public class App extends Application {
     private final ArduinoController[] controller = new ArduinoController[1];
 
     // ----------------- Callback da Arduino ------------------
-    private void onSerialDataReceived(String data) {
-        if (data == null) {
-            appendLog("Seriale nulla");
-            return;
-        }
+    private String statoDroneLogico = "riposo";
+    private String statoHangarLogico = "normale";
 
-        final String payload = data;
+    private void onSerialDataReceived(String data) {
+
+        if (data == null) return;
+        final String raw = data;
 
         Platform.runLater(() -> {
-            try {
-                String d = payload.replace("\r", "").replace("\n", "").trim();
-                if (d.isEmpty()) return;
+            String d = raw.replace("\r","").replace("\n","").trim();
+            if (d.isEmpty()) return;
 
-                outArduino.setText("RX: " + d);
-                appendLog("RX: " + d);
+            appendLog("RX: " + d);
+            outArduino.setText("RX: " + d);
 
-                if (d.startsWith("DRONE:")) {
-                    lblStatoDrone.setText("Stato Drone: " + d.substring(6).trim());
-                } else if (d.startsWith("HANGAR:")) {
-                    lblStatoHangar.setText("Stato Hangar: " + d.substring(7).trim());
-                } else if (d.startsWith("DISTANZA:")) {
-                    lblDistanza.setText("Distanza: " + d.substring(9).trim() + " cm");
+            // ---------------------------
+            //    MAPPATURA STATI DRONE
+            // ---------------------------
+            if (d.contains("DRONE INSIDE")) {
+                statoDroneLogico = "riposo";
+                lblDistanza.setVisible(false);
+                lblStatoDrone.setText("Stato Drone: riposo");
+                return;
+            }
+
+            if (d.contains("TAKE OFF")) {
+                statoDroneLogico = "decollo";
+                lblDistanza.setVisible(false);
+                lblStatoDrone.setText("Stato Drone: decollo");
+                return;
+            }
+
+            if (d.contains("DRONE OUT")) {
+                statoDroneLogico = "funzionamento";
+                lblDistanza.setVisible(false);
+                lblStatoDrone.setText("Stato Drone: funzionamento");
+                return;
+            }
+
+            if (d.contains("LANDING")) {
+                statoDroneLogico = "atterraggio";
+                lblDistanza.setVisible(true);
+                lblStatoDrone.setText("Stato Drone: atterraggio");
+                return;
+            }
+
+            // ---------------------------
+            //     MAPPATURA HANGAR
+            // ---------------------------
+            if (d.contains("SISTEMA BLOCCATO")) {
+                statoHangarLogico = "allarme";
+                lblStatoHangar.setText("Stato Hangar: ALLARME");
+                return;
+            }
+
+            if (d.contains("Pre-Allarme")) {
+                statoHangarLogico = "normale";
+                lblStatoHangar.setText("Stato Hangar: normale (PRE-ALLARME)");
+                return;
+            }
+
+            if (d.contains("INFO: Temperatura normalizzata")) {
+                statoHangarLogico = "normale";
+                lblStatoHangar.setText("Stato Hangar: normale");
+                return;
+            }
+
+            // ---------------------------
+            //        DISTANZA
+            // ---------------------------
+            if (d.startsWith("Dist:")) {
+                if (statoDroneLogico.equals("atterraggio")) {
+                    String val = d.substring(5).trim();
+                    lblDistanza.setText("Distanza: " + val + " cm");
+                    lblDistanza.setVisible(true);
                 }
-            } catch (Exception ex) {
-                appendLog("Errore callback: " + ex);
+                return;
             }
         });
     }
