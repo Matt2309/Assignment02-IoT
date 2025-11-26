@@ -19,6 +19,13 @@ const int temperatureSensor = A0;
 const int servoPin = 5;
 const int NUM_greenLed = 2;
 
+// Thermistor parameters
+#define RT0 1500
+#define B 3977
+#define R 60000
+float TR, VR, ln, TX, T0, VRT;
+
+
 // --- PARAMETRI ---
 #define D1_DIST_EXIT 20
 #define T1_TIME_EXIT 3000
@@ -123,7 +130,6 @@ void loop() {
 void taskFSM() {
   // --- LOGICA CICLICA ---
   switch (statoCorrente) {
-
     case DRONE_INSIDE:
       digitalWrite(greenLedPins[0], HIGH);
       if (cmdTakeOffReceived) {
@@ -211,6 +217,7 @@ void taskFSM() {
         if (getTemperature() < TEMP1_PRE_ALARM) {
           statoCorrente = DRONE_INSIDE;
           statoPrecedente = statoCorrente;
+          lcd.clear();
           lcd.print("DRONE INSIDE");
           digitalWrite(greenLedPins[0], HIGH);
           closeDoor();
@@ -261,7 +268,7 @@ void taskTemperature() {
         isPreAlarm = true;
         Serial.println("ATTENZIONE: Pre-Allarme Attivo (Temp Alta)");
         if (statoCorrente == DRONE_INSIDE || statoCorrente == DRONE_OUT) {
-          lcd.setCursor(11, 0);
+          lcd.setCursor(0, 1);
           lcd.print("(PRE)");
         }
       }
@@ -270,6 +277,9 @@ void taskTemperature() {
     tempPreAlarmTimer = 0;  // CORRETTO NOME VARIABILE
     if (isPreAlarm) {
       isPreAlarm = false;
+      lcd.setCursor(0, 0);
+      lcd.clear();
+      lcd.print("DRONE INSIDE");
       Serial.println("INFO: Temperatura normalizzata. Pre-Allarme rimosso.");
     }
   }
@@ -334,6 +344,9 @@ void initHardware() {
   lcd.init();
   lcd.backlight();
 
+  //temp conversion
+  T0 = 25 + 273.15;
+
   for (int i = 0; i < NUM_greenLed; i++) {
     pinMode(greenLedPins[i], OUTPUT);
   }
@@ -362,12 +375,16 @@ float getDistance() {
 }
 
 float getTemperature() {
-  int readingSum = 0;
-  for (int i = 0; i < 5; i++) {
-    readingSum += analogRead(temperatureSensor);
-  }
-  float v = (readingSum / 5.0) * (5.0 / 1023.0);
-  return (v - 0.5) * 100.0;
+  VRT = (5.00 / 1023.00) * analogRead(temperatureSensor);
+  VR = 5.00 - VRT;
+
+  TR = VRT / (VR / R);
+
+  ln = log(TR / RT0);
+  TX = (1 / ((ln / B) + (1 / T0)));
+
+  //return in Celsius
+  return TX - 273.15;
 }
 
 bool checkPir() {
@@ -380,7 +397,7 @@ void openDoor() {
 
   myservo.write(180);
 
-  delay(1000);
+  delay(2000);
 
   myservo.write(90);
   myservo.detach();
@@ -390,10 +407,10 @@ void closeDoor() {
   Serial.println("Servo: CLOSING...");
   myservo.attach(servoPin);
 
-  myservo.write(0);
-
-  delay(1000);
-
   myservo.write(90);
+
+  delay(2000);
+
+  myservo.write(180);
   myservo.detach();
 }
