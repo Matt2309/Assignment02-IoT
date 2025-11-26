@@ -33,12 +33,10 @@ public class App extends Application {
             String d = raw.replace("\r","").replace("\n","").trim();
             if (d.isEmpty()) return;
 
-            appendLog("RX: " + d);
+            //appendLog("RX: " + d);
             outArduino.setText("RX: " + d);
 
-            // ---------------------------
             //    MAPPATURA STATI DRONE
-            // ---------------------------
             if (d.contains("DRONE INSIDE")) {
                 statoDroneLogico = "riposo";
                 lblDistanza.setVisible(false);
@@ -67,9 +65,7 @@ public class App extends Application {
                 return;
             }
 
-            // ---------------------------
             //     MAPPATURA HANGAR
-            // ---------------------------
             if (d.contains("SISTEMA BLOCCATO")) {
                 statoHangarLogico = "allarme";
                 lblStatoHangar.setText("Stato Hangar: ALLARME");
@@ -88,9 +84,12 @@ public class App extends Application {
                 return;
             }
 
-            // ---------------------------
+            if (statoHangarLogico.equals("normale")) {
+                lblStatoHangar.setText("normale");
+            }
+
+
             //        DISTANZA
-            // ---------------------------
             if (d.startsWith("Dist:")) {
                 if (statoDroneLogico.equals("atterraggio")) {
                     String val = d.substring(5).trim();
