@@ -21,7 +21,7 @@ public class App extends Application {
     private final TextArea console = new TextArea();
     ArduinoController controller = new ArduinoController(this::onSerialDataReceived);
 
-    // ----------------- Callback da Arduino ------------------
+    // Callback da Arduino
     private String statoDroneLogico = "riposo";
     private String statoHangarLogico = "normale";
 
@@ -37,7 +37,7 @@ public class App extends Application {
             if (d.contains("MSG")) {
                 outArduino.setText("From arduino: " + d);
 
-                //    MAPPATURA STATI DRONE
+                //MAPPATURA STATI DRONE
                 if (d.contains("DRONE_INSIDE")) {
                     statoDroneLogico = "riposo";
                     statoHangarLogico = "normale";
@@ -65,7 +65,7 @@ public class App extends Application {
                     appendLog(d);
                 }
 
-                //     MAPPATURA HANGAR
+                //MAPPATURA HANGAR
                 if (d.contains("ALARM")) {
                     statoHangarLogico = "ALLARME";
                     ledHangar.setRed();
@@ -79,7 +79,7 @@ public class App extends Application {
                 lblStatoHangar.setText("Stato hangar: " + statoHangarLogico);
                 lblStatoDrone.setText("Stato drone: " + statoDroneLogico);
 
-                //        DISTANZA
+                //DISTANZA
                 if (d.contains("DIST")) {
                     if (statoDroneLogico.equals("atterraggio")) {
                         String val = d.split(" ")[2];
@@ -91,11 +91,11 @@ public class App extends Application {
         });
     }
 
-    // ----------------------- UI -----------------------------
+    //UI
     @Override
     public void start(Stage stage) {
 
-        // *** Sezione Superiore - Porta + Connessione ***
+        //Sezione Superiore - Porta + Connessione
         ComboBox<String> portSelector = new ComboBox<>();
         for (String p : controller.getAvailablePorts())
             portSelector.getItems().add(p);
@@ -111,7 +111,7 @@ public class App extends Application {
         topBar.setStyle("-fx-background-color: rgba(0,0,0,0.35); -fx-background-radius:10;");
 
 
-        // **** Pulsanti di comando drone (orizzontali) ***
+        //Pulsanti di comando drone (orizzontali)
         Button takeOffBtn = new Button("Decollo");
         Button landBtn = new Button("Atterraggio");
         Button resetBtn = new Button("RESET");
@@ -125,7 +125,7 @@ public class App extends Application {
         hangarStatusLine.setAlignment(Pos.CENTER_LEFT);
 
 
-        // **** Sezione Stato ***
+        //Sezione Stato
         VBox statusBox = new VBox(10,
                 lblStatoDrone,
                 hangarStatusLine,
@@ -137,7 +137,7 @@ public class App extends Application {
         statusBox.setAlignment(Pos.CENTER_LEFT);
 
 
-        // **** Console ***
+        //Console
         console.setEditable(false);
         console.setPrefRowCount(10);
         console.setStyle("-fx-control-inner-background: black; -fx-text-fill: #00FF00;");
@@ -147,11 +147,11 @@ public class App extends Application {
         centerContent.setStyle("-fx-background-color: rgba(0,0,0,0.5); -fx-background-radius:10;");
 
 
-        // **** Contenitore principale ***
+        //Contenitore principale
         VBox root = new VBox(20, topBar, commandBar, centerContent);
         root.setPadding(new Insets(20));
 
-        // **** Sfondo elegante ***
+        //Sfondo elegante
         Image img = new Image(getClass().getResource("/img/hangar.jpg").toExternalForm());
         BackgroundImage bgImg = new BackgroundImage(
                 img,
@@ -162,7 +162,7 @@ public class App extends Application {
         root.setBackground(new Background(bgImg));
 
 
-        // ------------------- Eventi Pulsanti -------------------
+        //Eventi Pulsanti
         connectBtn.setOnAction(e -> {
             String port = portSelector.getValue();
             if (port == null) {
