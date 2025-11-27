@@ -33,70 +33,49 @@ public class App extends Application {
             String d = raw.replace("\r","").replace("\n","").trim();
             if (d.isEmpty()) return;
 
-            //appendLog("RX: " + d);
-            outArduino.setText("RX: " + d);
+            if (d.contains("MSG")) {
+                outArduino.setText("From arduino: " + d);
 
-            //    MAPPATURA STATI DRONE
-            if (d.contains("DRONE INSIDE")) {
-                statoDroneLogico = "riposo";
-                lblDistanza.setVisible(false);
-                lblStatoDrone.setText("Stato Drone: riposo");
-                return;
-            }
-
-            if (d.contains("TAKE OFF")) {
-                statoDroneLogico = "decollo";
-                lblDistanza.setVisible(false);
-                lblStatoDrone.setText("Stato Drone: decollo");
-                return;
-            }
-
-            if (d.contains("DRONE OUT")) {
-                statoDroneLogico = "funzionamento";
-                lblDistanza.setVisible(false);
-                lblStatoDrone.setText("Stato Drone: funzionamento");
-                return;
-            }
-
-            if (d.contains("LANDING")) {
-                statoDroneLogico = "atterraggio";
-                lblDistanza.setVisible(true);
-                lblStatoDrone.setText("Stato Drone: atterraggio");
-                return;
-            }
-
-            //     MAPPATURA HANGAR
-            if (d.contains("SISTEMA BLOCCATO")) {
-                statoHangarLogico = "allarme";
-                lblStatoHangar.setText("Stato Hangar: ALLARME");
-                return;
-            }
-
-            if (d.contains("Pre-Allarme")) {
-                statoHangarLogico = "normale";
-                lblStatoHangar.setText("Stato Hangar: normale (PRE-ALLARME)");
-                return;
-            }
-
-            if (d.contains("INFO: Temperatura normalizzata")) {
-                statoHangarLogico = "normale";
-                lblStatoHangar.setText("Stato Hangar: normale");
-                return;
-            }
-
-            if (statoHangarLogico.equals("normale")) {
-                lblStatoHangar.setText("normale");
-            }
-
-
-            //        DISTANZA
-            if (d.startsWith("Dist:")) {
-                if (statoDroneLogico.equals("atterraggio")) {
-                    String val = d.substring(5).trim();
-                    lblDistanza.setText("Distanza: " + val + " cm");
-                    lblDistanza.setVisible(true);
+                //    MAPPATURA STATI DRONE
+                if (d.contains("DRONE_INSIDE")) {
+                    statoDroneLogico = "riposo";
+                    statoHangarLogico = "normale";
                 }
-                return;
+
+                if (d.contains("TAKE_OFF")) {
+                    statoDroneLogico = "decollo";
+                }
+
+                if (d.contains("DRONE_OUT")) {
+                    statoDroneLogico = "funzionamento";
+                    statoHangarLogico = "normale";
+                }
+
+                if (d.contains("LANDING")) {
+                    statoDroneLogico = "atterraggio";
+                    statoHangarLogico = "normale";
+                }
+
+                //     MAPPATURA HANGAR
+                if (d.contains("ALARM")) {
+                    statoHangarLogico = "ALLARME";
+                }
+
+                if (d.contains("PRE_ALARM")) {
+                    statoHangarLogico = "normale (PRE-ALLARME)";
+                }
+                lblDistanza.setVisible(false);
+                lblStatoHangar.setText("Stato hangar: " + statoHangarLogico);
+                lblStatoDrone.setText("Stato drone: " + statoDroneLogico);
+
+                //        DISTANZA
+                if (d.contains("DIST")) {
+                    if (statoDroneLogico.equals("atterraggio")) {
+                        String val = d.split(" ")[2];
+                        lblDistanza.setText("Distanza: " + val + " cm");
+                        lblDistanza.setVisible(true);
+                    }
+                }
             }
         });
     }

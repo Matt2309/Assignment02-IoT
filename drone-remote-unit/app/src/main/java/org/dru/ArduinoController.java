@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.function.Consumer;
 
 public class ArduinoController extends Thread {
+    public static StringBuilder text=new StringBuilder();
     private final Consumer<String> callback;
     private SerialPort serialPort;
 
@@ -42,18 +43,22 @@ public class ArduinoController extends Thread {
         new Thread(() -> {
             try {
                 while (true) {
-                    if (serialPort.bytesAvailable() > 0) {
-                        byte[] buffer = new byte[serialPort.bytesAvailable()];
-                        serialPort.readBytes(buffer, buffer.length);
-                        String data = new String(buffer);
-                        System.out.println("Input from Arduino: " + data);
-                        callback.accept(new String(buffer));
-                    }
+                    byte[] data = new byte[10];
+                    serialPort.readBytes(data,1);
+                    if((char)data[0] >= ' ')
+                        text.append((char)data[0]);
+                    else
+                        if((char)data[0]== '\n'){
+                            System.out.println("Input from Arduino: " + text);
+                            callback.accept(String.valueOf(text));
+                            text.setLength(0);
+                        }
                     Thread.sleep(20);
                 }
             } catch (Exception e) {
                 e.printStackTrace();
             }
+            serialPort.closePort();
         }).start();
     }
 
