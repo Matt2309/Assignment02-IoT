@@ -37,6 +37,11 @@ public class App extends Application {
             if (d.contains("MSG")) {
                 outArduino.setText("From arduino: " + d);
 
+                if(d.contains("ERROR")){
+                    appendLog(d);
+                    return;
+                }
+
                 //MAPPATURA STATI DRONE
                 if (d.contains("DRONE_INSIDE")) {
                     statoDroneLogico = "riposo";
@@ -59,10 +64,6 @@ public class App extends Application {
                     statoDroneLogico = "atterraggio";
                     statoHangarLogico = "normale";
                     ledHangar.setOff();
-                }
-
-                if(d.contains("ERROR")){
-                    appendLog(d);
                 }
 
                 //MAPPATURA HANGAR
