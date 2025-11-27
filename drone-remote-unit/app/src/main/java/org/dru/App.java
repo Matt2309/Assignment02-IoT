@@ -16,6 +16,7 @@ public class App extends Application {
     private final Label lblStatoHangar = new Label("Stato Hangar: -");
     private final Label lblDistanza = new Label("Distanza: -");
     private final Label outArduino = new Label("");
+    private final Led ledHangar = new Led(10);
 
     private final TextArea console = new TextArea();
     ArduinoController controller = new ArduinoController(this::onSerialDataReceived);
@@ -40,20 +41,24 @@ public class App extends Application {
                 if (d.contains("DRONE_INSIDE")) {
                     statoDroneLogico = "riposo";
                     statoHangarLogico = "normale";
+                    ledHangar.setOff();
                 }
 
                 if (d.contains("TAKE_OFF")) {
                     statoDroneLogico = "decollo";
+                    ledHangar.setOff();
                 }
 
                 if (d.contains("DRONE_OUT")) {
                     statoDroneLogico = "funzionamento";
                     statoHangarLogico = "normale";
+                    ledHangar.setOff();
                 }
 
                 if (d.contains("LANDING")) {
                     statoDroneLogico = "atterraggio";
                     statoHangarLogico = "normale";
+                    ledHangar.setOff();
                 }
 
                 if(d.contains("ERROR")){
@@ -63,10 +68,12 @@ public class App extends Application {
                 //     MAPPATURA HANGAR
                 if (d.contains("ALARM")) {
                     statoHangarLogico = "ALLARME";
+                    ledHangar.setRed();
                 }
 
                 if (d.contains("PRE_ALARM")) {
                     statoHangarLogico = "normale (PRE-ALLARME)";
+                    ledHangar.setYellow();
                 }
                 lblDistanza.setVisible(false);
                 lblStatoHangar.setText("Stato hangar: " + statoHangarLogico);
@@ -114,11 +121,14 @@ public class App extends Application {
         commandBar.setPadding(new Insets(15));
         commandBar.setStyle("-fx-background-color: rgba(0,0,0,0.35); -fx-background-radius:10;");
 
+        HBox hangarStatusLine = new HBox(10, lblStatoHangar, ledHangar);
+        hangarStatusLine.setAlignment(Pos.CENTER_LEFT);
+
 
         // **** Sezione Stato ***
         VBox statusBox = new VBox(10,
                 lblStatoDrone,
-                lblStatoHangar,
+                hangarStatusLine,
                 lblDistanza,
                 outArduino
         );
