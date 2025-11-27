@@ -56,6 +56,10 @@ public class App extends Application {
                     statoHangarLogico = "normale";
                 }
 
+                if(d.contains("ERROR")){
+                    appendLog(d);
+                }
+
                 //     MAPPATURA HANGAR
                 if (d.contains("ALARM")) {
                     statoHangarLogico = "ALLARME";
