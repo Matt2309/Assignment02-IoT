@@ -66,7 +66,7 @@ public class App extends Application {
                 }
 
                 //MAPPATURA HANGAR
-                if (d.contains("ALARM")) {
+                if (d.contains("ALARM") && !d.contains("ERROR")) {
                     statoHangarLogico = "ALLARME";
                     ledHangar.setRed();
                 }
