@@ -31,9 +31,9 @@ float VRT, VR, TR, ln, TX, T0;
 #define D2_DIST_LAND 10
 #define T2_TIME_LAND 3000
 
-#define TEMP1_PRE_ALARM 25
+#define TEMP1_PRE_ALARM 30
 #define T3_TIME_PRE_ALARM 40
-#define TEMP2_ALARM 400
+#define TEMP2_ALARM 40
 #define T4_TIME_ALARM 3000
 
 // --- STATI ---
@@ -132,7 +132,6 @@ void setState(State next, const char* serialMsg) {
   statoCorrente = next;
   lcd.clear();
   lcd.print(stateNames[next]);
-  if (isPreAlarm) lcd.print(" (PRE)");
   Serial.print("MSG: ");
   Serial.println(serialMsg);
 }
@@ -202,6 +201,7 @@ void taskFSM() {
         if (getTemperature() < TEMP1_PRE_ALARM) {
           setState(statoPrecedente, stateNames[statoPrecedente]);
           digitalWrite(greenLedPins[0], HIGH);
+          digitalWrite(redLedPin, LOW);
           closeDoor();
         } else {
           Serial.println("Reset fallito - Temperatura ancora troppo alta!");
@@ -220,6 +220,7 @@ void taskTemperature() {
   if (temp > TEMP2_ALARM) {
     if (tempAlarmTimer == 0) tempAlarmTimer = millis();
     else if (millis() - tempAlarmTimer >= T4_TIME_ALARM) {
+      isPreAlarm = false;
       setState(ALARM, "ALARM");
       digitalWrite(greenLedPins[0], LOW);
       digitalWrite(greenLedPins[1], LOW);
@@ -231,13 +232,13 @@ void taskTemperature() {
     tempAlarmTimer = 0;
   }
 
-  if (temp >= TEMP1_PRE_ALARM) {
+  if (temp >= TEMP1_PRE_ALARM && statoCorrente != ALARM) {
     if (tempPreAlarmTimer == 0) tempPreAlarmTimer = millis();
     else if (!isPreAlarm && millis() - tempPreAlarmTimer >= T3_TIME_PRE_ALARM) {
       isPreAlarm = true;
-      Serial.println("MSG: PRE_ALARM");
       lcd.setCursor(0, 1);
-      lcd.print("(PRE)");
+      lcd.print("(PRE ALARM)");
+      Serial.println("MSG: PRE_ALARM");
     }
   } else {
     tempPreAlarmTimer = 0;
@@ -312,8 +313,7 @@ void initHardware() {
   myservo.attach(servoPin);
   closeDoor();
 
-  lcd.clear();
-  lcd.print("DRONE INSIDE");
+  setState(DRONE_INSIDE, "DRONE_INSIDE");
   Serial.println("MSG: DRONE_INSIDE");
 }
 
