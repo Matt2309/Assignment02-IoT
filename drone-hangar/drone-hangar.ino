@@ -20,10 +20,8 @@ const int servoPin = 5;
 const int NUM_greenLed = 2;
 
 // Thermistor parameters
-#define RT0 1500
-#define B 3977
-#define R 60000
-float VRT, VR, TR, ln, TX, T0;
+#define FACTOR 5000
+#define SCALE 10
 
 // --- PARAMETRI ---
 #define D1_DIST_EXIT 20
@@ -33,7 +31,7 @@ float VRT, VR, TR, ln, TX, T0;
 
 #define TEMP1_PRE_ALARM 30
 #define T3_TIME_PRE_ALARM 40
-#define TEMP2_ALARM 40
+#define TEMP2_ALARM 35
 #define T4_TIME_ALARM 3000
 
 // --- STATI ---
@@ -299,8 +297,6 @@ void initHardware() {
   lcd.init();
   lcd.backlight();
 
-  T0 = 25 + 273.15;
-
   for (int i = 0; i < NUM_greenLed; i++)
     pinMode(greenLedPins[i], OUTPUT);
 
@@ -326,12 +322,10 @@ float getDistance() {
 }
 
 float getTemperature() {
-  VRT = (5.00 / 1023.00) * analogRead(temperatureSensor);
-  VR = 5.00 - VRT;
-  TR = VRT / (VR / R);
-  ln = log(TR / RT0);
-  TX = 1 / ((ln / B) + (1 / T0));
-  return TX - 273.15;
+  int temp_adc_val = analogRead(temperatureSensor);
+  
+  float coeff = FACTOR/(1023.0*SCALE); 
+  return temp_adc_val * coeff;
 }
 
 bool checkPir() {
